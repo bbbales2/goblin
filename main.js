@@ -1,9 +1,9 @@
-var data;
+var jsonData;
 
-var load = function(data_) {
-    data = data_;
+var load = function(data) {
+    jsonData = data;
 
-    Crafty.init(500, 350, document.getElementById('game'));
+    Crafty.init(800, 600, document.getElementById('game'));
 
     assets = {
 	"sprites": {
@@ -31,31 +31,86 @@ var anims = {};
 Crafty.c('Character', {
     required : '2D, Canvas, SpriteAnimation',
 
-    Character : function(sprite_component, assets)
+    state : "s", // s -- standing, m -- walking, a -- attacking
+
+    x : 0,
+    y : 0,
+    r : 0,
+
+    Character : function(sprite_component, anims)
     {
 	this.addComponent(sprite_component);
 
-	for (var aname in assets.anims) {
-	    var anim = assets.anims[aname];
+	for (var aname in anims) {
+	    var anim = anims[aname];
 	    
 	    this.reel(aname, 750, 0, anim.y, anim.frames);
 	}
 
 	return this;
+    },
+
+    tick : function(dt)
+    {
+	var pi8 = Math.PI / 8.0;
+
+	this.r = this.r % (2 * Math.PI);
+
+	var dir = null;
+
+	if (this.r < pi8 || this.r >= 15 * pi8)
+	{
+	    dir = 'n';
+	} else if (this.r < 3 * pi8 && this.r >= pi8) {
+	    dir = 'ne';
+	} else if (this.r < 5 * pi8 && this.r >= 3 * pi8) {
+	    dir = 'e';
+	} else if (this.r < 7 * pi8 && this.r >= 5 * pi8) {
+	    dir = 'se';
+	} else if (this.r < 9 * pi8 && this.r >= 7 * pi8) {
+	    dir = 's';
+	} else if (this.r < 11 * pi8 && this.r >= 9 * pi8) {
+	    dir = 'sw';
+	} else if (this.r < 13 * pi8 && this.r >= 11 * pi8) {
+	    dir = 'w';
+	} else if (this.r < 15 * pi8 && this.r >= 13 * pi8) {
+	    dir = 'nw';
+	}
+
+	var animation = null;
+
+	if (this.state == "s") {
+	    animation = "m" + dir;
+
+	    if(this.isPlaying())
+		this.pauseAnimation();
+	} else {
+	    if (this.state == "m") {
+		animation = "m" + dir;
+	    } else if (this.state == "a") {
+		animation = "a1" + dir;
+	    }
+
+	    if(this.getReel() != animation)
+	    {
+		this.animate(animation, -1);
+	    }
+
+	    if(!this.isPlaying())
+	    {
+		this.resumeAnimation();
+	    }
+	}
     }
 });
 
 var go = function() {
-    for (cname in data) {
-	var asset = data[cname];
-    }
+    for (var i = 0; i < 8; i++) {
+	var skel = Crafty.e("Character").Character("sprites_skeleton", jsonData['skeleton'].anims);
 
-    for (var i = 0; i < 5; i++) {
-	var skel = Crafty.e("Character").Character("sprites_skeleton", data['skeleton']);
+	skel.attr({ x : i * 50, y : i * 50, r : i * Math.PI / 4.0, state : ["s", "m", "a"][i % 3] })
 
-	skel.attr({ x : i * 20 })
-
-	skel.animate("me", -1);
+	skel.tick();
     }
 };
 
