@@ -37,6 +37,14 @@ Crafty.c('Character', {
     y : 0,
     r : 0,
 
+    queue : [],
+
+    /* Possible jobs in queue
+      ["m", [x, y]] -- move to x, y
+      ["a", [x, y]] -- attack to x, y
+      ["at", target] -- attack target until it is dead
+    */
+
     Character : function(sprite_component, anims)
     {
 	this.addComponent(sprite_component);
@@ -50,7 +58,7 @@ Crafty.c('Character', {
 	return this;
     },
 
-    tick : function(dt)
+    atick : function(dt)
     {
 	var pi8 = Math.PI / 8.0;
 
@@ -101,6 +109,34 @@ Crafty.c('Character', {
 		this.resumeAnimation();
 	    }
 	}
+
+	return this;
+    },
+
+    tick : function(dt)
+    {
+	if (this.queue.length == 0) {
+	    this.state = 's'
+	} else {
+	    var job = this.queue[0];
+	    var x = this.x;
+	    var y = this.y;
+
+	    if (job[0] == "m") {
+		var loss, gradU = mUgradU([x, y], job[1]);
+
+		if (loss < 1.0)
+		    this.queue.shift();
+		else
+		{
+		    gradU = normalize(gradU);
+		    //gradU / 
+		}
+	    }
+	}
+
+	//Fix animation
+	this.atick();
     }
 });
 
